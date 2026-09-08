@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import TelemetryDrawer from './components/TelemetryDrawer';
-import Sidebar from './components/Sidebar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
@@ -58,9 +57,8 @@ export default function App() {
           onLogout={handleLogout}
           onOpenTelemetry={() => setIsTelemetryOpen(true)}
         />
-        <Sidebar />
 
-        <main className="flex-1 pt-28 pl-72">
+        <main className="flex-1 pt-28">
           <Routes>
             <Route path="/" element={<LandingPage onOpenTelemetry={() => setIsTelemetryOpen(true)} />} />
             <Route path="/login" element={<LoginPage onLoginSuccess={handleLoginSuccess} />} />
