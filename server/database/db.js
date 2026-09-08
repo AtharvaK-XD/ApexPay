@@ -117,6 +117,13 @@ export const initDB = async () => {
       ON CONFLICT(key) DO UPDATE SET value = excluded.value
     `, [defaultFlareUrl]);
 
+    // Permanently purge any legacy ngrok URLs
+    await run(`
+      UPDATE config
+      SET value = 'http://127.0.0.1:8000/api/v1/ingest/eve'
+      WHERE key = 'flare_webhook_url' AND (value LIKE '%ngrok%' OR value LIKE '%durable%')
+    `);
+
     if (process.env.FLARE_SERVICE_TOKEN) {
       await run(`
         INSERT INTO config (key, value)

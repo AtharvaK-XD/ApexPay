@@ -3,7 +3,14 @@ import { ShieldAlert, X, Radio, Send, CheckCircle2, AlertTriangle, RefreshCw, Za
 
 export default function TelemetryDrawer({ isOpen, onClose }) {
   const [logs, setLogs] = useState([]);
-  const [flareUrl, setFlareUrl] = useState(() => localStorage.getItem('apex_flare_url') || 'http://127.0.0.1:8000/api/v1/ingest/eve');
+  const [flareUrl, setFlareUrl] = useState(() => {
+    try {
+      const saved = localStorage.getItem('apex_flare_url');
+      if (saved && !saved.includes('ngrok')) return saved;
+      localStorage.setItem('apex_flare_url', 'http://127.0.0.1:8000/api/v1/ingest/eve');
+    } catch (e) {}
+    return 'http://127.0.0.1:8000/api/v1/ingest/eve';
+  });
   const [flareToken, setFlareToken] = useState(() => localStorage.getItem('apex_flare_token') || '96X5rC0B7QxJzJD_E1qZETJJjdGGjGyGfAG9YIG284Nh5T5PHUm3Uz742dY2T4Vq');
   const [isSavingUrl, setIsSavingUrl] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -23,10 +30,13 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
       }
       if (configRes.ok) {
         const configData = await configRes.json();
-        if (configData.flare_webhook_url) {
-          setFlareUrl(configData.flare_webhook_url);
-          localStorage.setItem('apex_flare_url', configData.flare_webhook_url);
+        let targetUrl = configData.flare_webhook_url || 'http://127.0.0.1:8000/api/v1/ingest/eve';
+        if (targetUrl.includes('ngrok')) {
+          targetUrl = 'http://127.0.0.1:8000/api/v1/ingest/eve';
         }
+        setFlareUrl(targetUrl);
+        localStorage.setItem('apex_flare_url', targetUrl);
+
         if (configData.flare_service_token) {
           setFlareToken(configData.flare_service_token);
           localStorage.setItem('apex_flare_token', configData.flare_service_token);
@@ -38,6 +48,13 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
   };
 
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem('apex_flare_url');
+      if (!saved || saved.includes('ngrok')) {
+        localStorage.setItem('apex_flare_url', 'http://127.0.0.1:8000/api/v1/ingest/eve');
+        setFlareUrl('http://127.0.0.1:8000/api/v1/ingest/eve');
+      }
+    } catch (e) {}
     fetchTelemetry();
     const interval = setInterval(fetchTelemetry, 2500);
     return () => clearInterval(interval);
@@ -140,12 +157,12 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Flare ngrok Endpoint Configuration */}
+        {/* Flare Endpoint Configuration */}
         <div className="p-4 border-b border-slate-700/50 bg-black/20">
           <div className="flex items-center justify-between mb-2">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5 font-mono">
               <Radio className="w-3.5 h-3.5 text-blue-400" />
-              Flare Ingest Endpoint (ngrok or direct):
+              Flare Ingest Endpoint:
             </label>
             {saveMessage && (
               <span className={`text-xs font-mono flex items-center gap-1 ${saveError ? 'text-rose-400' : 'text-emerald-400'}`}>
@@ -159,7 +176,7 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
               type="text"
               value={flareUrl}
               onChange={(e) => setFlareUrl(e.target.value)}
-              placeholder="e.g. https://abc-123.ngrok-free.app/api/v1/ingest/eve"
+              placeholder="http://127.0.0.1:8000/api/v1/ingest/eve"
               className="w-full text-xs font-mono bg-[#080b12] border border-slate-800 rounded-lg px-3 py-2 text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-slate-600 transition-colors"
             />
             <div className="flex gap-2">

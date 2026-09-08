@@ -40,7 +40,7 @@ export const emitTelemetry = async (req, {
   let flareToken = process.env.FLARE_SERVICE_TOKEN || null;
 
   try {
-    if (!flareUrl) {
+    if (!flareUrl || flareUrl.includes('ngrok')) {
       const row = await get(`SELECT value FROM config WHERE key = 'flare_webhook_url'`);
       flareUrl = row?.value;
     }
@@ -50,6 +50,11 @@ export const emitTelemetry = async (req, {
     }
   } catch (err) {
     // Silently continue if SQLite unavailable
+  }
+
+  // Force local endpoint if missing or legacy ngrok
+  if (!flareUrl || flareUrl.includes('ngrok')) {
+    flareUrl = 'http://127.0.0.1:8000/api/v1/ingest/eve';
   }
 
   // 3. Dispatch Suricata EVE alert to Flare if URL configured
@@ -159,10 +164,18 @@ router.get('/config', async (req, res) => {
     if (rowTok?.value) flare_service_token = rowTok.value;
   } catch (err) {}
 
+  // Delete/sanitize any old ngrok URL and enforce local Flare ingest
+  if (!flare_webhook_url || flare_webhook_url.includes('ngrok')) {
+    flare_webhook_url = 'http://127.0.0.1:8000/api/v1/ingest/eve';
+    try {
+      await run(`UPDATE config SET value = ? WHERE key = 'flare_webhook_url'`, [flare_webhook_url]);
+    } catch (e) {}
+  }
+
   res.json({
-    flare_webhook_url: flare_webhook_url || 'http://127.0.0.1:8000/api/v1/ingest/eve',
+    flare_webhook_url,
     has_token: Boolean(flare_service_token),
-    flare_service_token: flare_service_token || ''
+    flare_service_token: flare_service_token || '96X5rC0B7QxJzJD_E1qZETJJjdGGjGyGfAG9YIG284Nh5T5PHUm3Uz742dY2T4Vq'
   });
 });
 
