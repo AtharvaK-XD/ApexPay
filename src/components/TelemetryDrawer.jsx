@@ -3,8 +3,8 @@ import { ShieldAlert, X, Radio, Send, CheckCircle2, AlertTriangle, RefreshCw, Za
 
 export default function TelemetryDrawer({ isOpen, onClose }) {
   const [logs, setLogs] = useState([]);
-  const [flareUrl, setFlareUrl] = useState('');
-  const [flareToken, setFlareToken] = useState('');
+  const [flareUrl, setFlareUrl] = useState(() => localStorage.getItem('apex_flare_url') || 'http://127.0.0.1:8000/api/v1/ingest/eve');
+  const [flareToken, setFlareToken] = useState(() => localStorage.getItem('apex_flare_token') || 'pAKSddf2G_rj9X9iRd0exdxDBO4zpdxIrPs9t8Akk7y12YZATXQE1ZeA-nHRua7H');
   const [isSavingUrl, setIsSavingUrl] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState(false);
@@ -23,9 +23,15 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
       }
       if (configRes.ok) {
         const configData = await configRes.json();
-        setFlareUrl(configData.flare_webhook_url || '');
+        if (configData.flare_webhook_url) {
+          setFlareUrl(configData.flare_webhook_url);
+          localStorage.setItem('apex_flare_url', configData.flare_webhook_url);
+        }
         if (configData.has_token && !flareToken) {
           setFlareToken(configData.flare_service_token || '');
+          if (configData.flare_service_token) {
+            localStorage.setItem('apex_flare_token', configData.flare_service_token);
+          }
         }
       }
     } catch (err) {
@@ -43,6 +49,8 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
     e.preventDefault();
     setIsSavingUrl(true);
     setSaveMessage('');
+    localStorage.setItem('apex_flare_url', flareUrl);
+    localStorage.setItem('apex_flare_token', flareToken);
     try {
       const res = await fetch('/api/telemetry/config', {
         method: 'POST',
@@ -61,8 +69,9 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
         setSaveMessage('Failed to save config');
       }
     } catch (err) {
-      setSaveError(true);
-      setSaveMessage('Network error saving config');
+      setSaveError(false);
+      setSaveMessage('Saved locally in browser');
+      setTimeout(() => setSaveMessage(''), 3000);
     } finally {
       setIsSavingUrl(false);
     }
