@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    background-color: #080a0f;
+    color: #f1f5f9;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: -0.02em;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Institutional Fintech Solid Surfaces (Zero Gradients, Crisp 1px Borders) */
+.fintech-panel,
+.glass-panel {
+  background-color: #0d111a;
+  border: 1px solid #1e293b;
+}
+
+.fintech-card,
+.glass-card {
+  background-color: #0f1420;
+  border: 1px solid #1e293b;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.fintech-card:hover,
+.glass-card:hover {
+  border-color: #334155;
+  background-color: #121826;
+  transform: none;
+}
+
+/* Custom minimal scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
