@@ -1,3 +1,9 @@
+try {
+  process.loadEnvFile();
+} catch (e) {
+  // .env may not be present in all environments
+}
+
 import express from 'express';
 import cors from 'cors';
 import { initDB } from './database/db.js';

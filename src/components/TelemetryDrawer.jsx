@@ -4,7 +4,7 @@ import { ShieldAlert, X, Radio, Send, CheckCircle2, AlertTriangle, RefreshCw, Za
 export default function TelemetryDrawer({ isOpen, onClose }) {
   const [logs, setLogs] = useState([]);
   const [flareUrl, setFlareUrl] = useState(() => localStorage.getItem('apex_flare_url') || 'http://127.0.0.1:8000/api/v1/ingest/eve');
-  const [flareToken, setFlareToken] = useState(() => localStorage.getItem('apex_flare_token') || 'pAKSddf2G_rj9X9iRd0exdxDBO4zpdxIrPs9t8Akk7y12YZATXQE1ZeA-nHRua7H');
+  const [flareToken, setFlareToken] = useState(() => localStorage.getItem('apex_flare_token') || '96X5rC0B7QxJzJD_E1qZETJJjdGGjGyGfAG9YIG284Nh5T5PHUm3Uz742dY2T4Vq');
   const [isSavingUrl, setIsSavingUrl] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [saveError, setSaveError] = useState(false);
@@ -27,11 +27,9 @@ export default function TelemetryDrawer({ isOpen, onClose }) {
           setFlareUrl(configData.flare_webhook_url);
           localStorage.setItem('apex_flare_url', configData.flare_webhook_url);
         }
-        if (configData.has_token && !flareToken) {
-          setFlareToken(configData.flare_service_token || '');
-          if (configData.flare_service_token) {
-            localStorage.setItem('apex_flare_token', configData.flare_service_token);
-          }
+        if (configData.flare_service_token) {
+          setFlareToken(configData.flare_service_token);
+          localStorage.setItem('apex_flare_token', configData.flare_service_token);
         }
       }
     } catch (err) {

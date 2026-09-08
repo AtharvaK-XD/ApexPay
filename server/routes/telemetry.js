@@ -68,19 +68,24 @@ export const emitTelemetry = async (req, {
       metaList.push({ [k]: v });
     }
 
+    // Map severity to Suricata integer 1..4 (1=High/Critical, 2=Medium, 3=Low, 4=Info)
+    const sevMap = { critical: 1, high: 1, medium: 2, low: 3, info: 4 };
+    const numericSeverity = sevMap[String(severity).toLowerCase()] || 2;
+
     // Exact Suricata EVE JSON Record
     const eveRecord = {
-      timestamp,
+      timestamp: new Date().toISOString(),
       event_type: 'alert',
       src_ip: cleanSrcIp,
       src_port: Math.floor(Math.random() * (65535 - 1024) + 1024),
-      dest_ip: req.socket?.localAddress || '198.51.100.10',
+      dest_ip: '198.51.100.10',
       dest_port: 443,
       proto: 'TCP',
       alert: {
         signature: alertSig,
+        signature_id: Math.floor(Math.random() * 1000000) + 2000000,
         category: 'Web Application Attack',
-        severity: String(severity).toLowerCase(),
+        severity: numericSeverity,
         metadata: metaList
       },
       http: {
@@ -96,13 +101,18 @@ export const emitTelemetry = async (req, {
       'Content-Type': 'application/json'
     };
     if (flareToken) {
-      headers['Authorization'] = `ServiceToken ${flareToken}`;
+      headers['Authorization'] = `ServiceToken ${flareToken.trim()}`;
     }
+
+    // Flare backend requires: {"events": [eveRecord]}
+    const payload = {
+      events: [eveRecord]
+    };
 
     fetch(flareUrl, {
       method: 'POST',
       headers,
-      body: JSON.stringify(eveRecord)
+      body: JSON.stringify(payload)
     })
       .then(async (res) => {
         if (res.ok) {
@@ -143,20 +153,16 @@ router.get('/config', async (req, res) => {
   let flare_service_token = process.env.FLARE_SERVICE_TOKEN || '';
 
   try {
-    if (!flare_webhook_url) {
-      const row = await get(`SELECT value FROM config WHERE key = 'flare_webhook_url'`);
-      flare_webhook_url = row?.value || '';
-    }
-    if (!flare_service_token) {
-      const row = await get(`SELECT value FROM config WHERE key = 'flare_service_token'`);
-      flare_service_token = row?.value || '';
-    }
+    const rowUrl = await get(`SELECT value FROM config WHERE key = 'flare_webhook_url'`);
+    if (rowUrl?.value) flare_webhook_url = rowUrl.value;
+    const rowTok = await get(`SELECT value FROM config WHERE key = 'flare_service_token'`);
+    if (rowTok?.value) flare_service_token = rowTok.value;
   } catch (err) {}
 
   res.json({
-    flare_webhook_url,
+    flare_webhook_url: flare_webhook_url || 'http://127.0.0.1:8000/api/v1/ingest/eve',
     has_token: Boolean(flare_service_token),
-    flare_service_token: flare_service_token ? `${flare_service_token.slice(0, 6)}...` : ''
+    flare_service_token: flare_service_token || ''
   });
 });
 
@@ -166,6 +172,7 @@ router.post('/config', async (req, res) => {
     const { flare_webhook_url, flare_service_token } = req.body;
 
     if (flare_webhook_url !== undefined) {
+      process.env.FLARE_WEBHOOK_URL = flare_webhook_url;
       await run(`
         INSERT INTO config (key, value) VALUES ('flare_webhook_url', ?)
         ON CONFLICT(key) DO UPDATE SET value = excluded.value
@@ -173,13 +180,14 @@ router.post('/config', async (req, res) => {
     }
 
     if (flare_service_token !== undefined) {
+      process.env.FLARE_SERVICE_TOKEN = flare_service_token;
       await run(`
         INSERT INTO config (key, value) VALUES ('flare_service_token', ?)
         ON CONFLICT(key) DO UPDATE SET value = excluded.value
       `, [flare_service_token]);
     }
 
-    res.json({ success: true, flare_webhook_url });
+    res.json({ success: true, flare_webhook_url, flare_service_token });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

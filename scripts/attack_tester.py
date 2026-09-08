@@ -43,6 +43,9 @@ def send_direct_flare_alert(flare_endpoint, flare_token, target_url, attack_type
     if not flare_endpoint:
         return
 
+    sev_map = {"critical": 1, "high": 1, "medium": 2, "low": 3, "info": 4}
+    numeric_sev = sev_map.get(str(severity).lower(), 2)
+
     eve_record = {
         "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "event_type": "alert",
@@ -54,7 +57,7 @@ def send_direct_flare_alert(flare_endpoint, flare_token, target_url, attack_type
         "alert": {
             "signature": f"ET WEB_ATTACK {attack_type.upper()} Attempt",
             "category": "Web Application Attack",
-            "severity": severity.lower(),
+            "severity": numeric_sev,
             "metadata": [
                 {"attack_target": "server_web_app"},
                 {"generated_by": "python_attack_script"}
@@ -71,10 +74,12 @@ def send_direct_flare_alert(flare_endpoint, flare_token, target_url, attack_type
 
     headers = {"Content-Type": "application/json"}
     if flare_token:
-        headers["Authorization"] = f"ServiceToken {flare_token}"
+        headers["Authorization"] = f"ServiceToken {flare_token.strip()}"
+
+    payload = {"events": [eve_record]}
 
     try:
-        resp = requests.post(flare_endpoint, json=eve_record, headers=headers, timeout=5)
+        resp = requests.post(flare_endpoint, json=payload, headers=headers, timeout=5)
         if resp.status_code < 300:
             log_success(f"Direct Flare alert dispatched for {attack_type}")
     except Exception as e:
@@ -193,8 +198,8 @@ def test_scanner_user_agent(base_url):
 def main():
     parser = argparse.ArgumentParser(description="ApexPay -> Flare Attack Tester")
     parser.add_argument("url", nargs="?", default="http://localhost:3000", help="Target URL (e.g. https://your-site.vercel.app)")
-    parser.add_argument("--flare-url", help="Direct Flare ingest URL (optional)")
-    parser.add_argument("--flare-token", help="Flare service token (optional)")
+    parser.add_argument("--flare-url", default="http://127.0.0.1:8000/api/v1/ingest/eve", help="Direct Flare ingest URL (default: http://127.0.0.1:8000/api/v1/ingest/eve)")
+    parser.add_argument("--flare-token", default="96X5rC0B7QxJzJD_E1qZETJJjdGGjGyGfAG9YIG284Nh5T5PHUm3Uz742dY2T4Vq", help="Flare service token (optional)")
     args = parser.parse_args()
 
     target_url = args.url.rstrip("/")

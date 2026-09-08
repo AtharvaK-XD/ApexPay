@@ -114,7 +114,7 @@ export const initDB = async () => {
     await run(`
       INSERT INTO config (key, value)
       VALUES ('flare_webhook_url', ?)
-      ON CONFLICT(key) DO NOTHING
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value
     `, [defaultFlareUrl]);
 
     if (process.env.FLARE_SERVICE_TOKEN) {
