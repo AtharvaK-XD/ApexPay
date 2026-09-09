@@ -93,14 +93,3 @@ python scripts/attack_tester.py https://your-site.vercel.app
 4. **Command Injection:** Probes with command separators `127.0.0.1; whoami`.
 5. **Malicious Scanner Detection:** Tests scanner user-agents (e.g. `sqlmap`, `nikto`).
 
----
-
-## 🎯 Verification in Flare Dashboard
-
-1. Open your Flare Dashboard: `http://localhost:5174`
-2. Look at the **Live Alert Feed**:
-   - Signature: `ET WEB_ATTACK SQL Injection Attempt`, `ET WEB_ATTACK Cross-Site Scripting Attempt`, etc.
-   - Severity: `High`, `Medium`, etc.
-   - Category: `Web Application Attack`
-   - Source IP: Real client/attacker IP
-   - MITRE ATT&CK Mapping: `T1190`, `T1059`, `T1083`
